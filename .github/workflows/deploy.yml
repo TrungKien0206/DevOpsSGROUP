@@ -1,0 +1,30 @@
+name: 🚀 CI/CD Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⏬ Checkout source
+        uses: actions/checkout@v3
+
+      - name: 🔐 Setup SSH access
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 13.213.33.124 >> ~/.ssh/known_hosts
+
+      - name: 🚀 SSH into EC2 and deploy
+        run: |
+          ssh ubuntu@13.213.33.124 << 'EOF'
+            cd ~/DevOpsSGROUP
+            git pull origin main
+            docker-compose down
+            docker-compose up -d --build
+          EOF
+
