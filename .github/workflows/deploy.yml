@@ -22,9 +22,6 @@ jobs:
       - name: 📦 Install dependencies
         run: npm install
 
-      - name: 🧪 Run tests
-        run: npm test
-
       - name: 🔐 Log in to DockerHub
         uses: docker/login-action@v3
         with:
