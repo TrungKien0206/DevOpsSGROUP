@@ -17,7 +17,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H 13.213.33.124 >> ~/.ssh/known_hosts
+          ssh-keyscan -H 18.139.161.234 >> ~/.ssh/known_hosts
 
       - name: 🚀 SSH into EC2 and deploy
         run: |
