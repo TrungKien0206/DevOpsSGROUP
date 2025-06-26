@@ -1,25 +1,50 @@
-name: 🚀 CI/CD Deploy to EC2
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: ⏬ Checkout source
-        uses: actions/checkout@v3
+      - name: ⏬ Checkout code
+        uses: actions/checkout@v4
 
-      - name: 🔐 Setup SSH access
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 📦 Install dependencies
+        run: npm install
+
+      - name: 🧪 Run tests
+        run: npm test
+
+      - name: 🔐 Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 🐳 Build Docker image
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/demoexpress:latest .
+
+      - name: 📤 Push Docker image
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/demoexpress:latest
+
+      - name: 🔐 Setup SSH to EC2
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H 54.169.152.71 >> ~/.ssh/known_hosts
 
-      - name: 🚀 SSH into EC2 and deploy
+      - name: 🚀 Deploy on EC2
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@54.169.152.71 << 'EOF'
             cd ~/DevOpsSGROUP
@@ -27,4 +52,3 @@ jobs:
             docker-compose down
             docker-compose up -d --build
           EOF
-
