@@ -21,7 +21,7 @@ jobs:
 
       - name: 🚀 SSH into EC2 and deploy
         run: |
-          ssh ubuntu@13.213.33.124 << 'EOF'
+          ssh ubuntu@18.139.161.234 << 'EOF'
             cd ~/DevOpsSGROUP
             git pull origin main
             docker-compose down
