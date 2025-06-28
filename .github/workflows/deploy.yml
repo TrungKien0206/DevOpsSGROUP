@@ -43,7 +43,7 @@ jobs:
 
       - name: 🚀 Deploy on EC2
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@54.169.152.71 << 'EOF'
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@54.255.22.195 << 'EOF'
             cd ~/DevOpsSGROUP
             git pull origin main
             docker-compose down
