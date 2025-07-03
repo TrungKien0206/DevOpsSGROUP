@@ -7,7 +7,7 @@ WORKDIR /demoexpress
 
 # Sao chép 2 file package.json và package-lock.json (nếu có) vào container
 # Điều này giúp tận dụng cache của Docker để không phải cài lại npm packages nếu không thay đổi
-COPY package*.json .
+COPY package*.json ./
 
 # Cài đặt các dependencies được định nghĩa trong package.json
 RUN npm install

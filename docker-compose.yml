@@ -1,38 +1,51 @@
+version: "3.8"
+
 services:
-  db:  # Khai báo service MongoDB, dùng làm database
-    image: mongo:7.0  # Sử dụng image chính thức của MongoDB phiên bản 7.0 từ Docker Hub
-    container_name: mongodb  # Đặt tên cụ thể cho container là "mongodb"
+  db:
+    image: mongo:7.0
+    container_name: mongodb
     ports:
-      - '27018:27017'  
-      # Map cổng host 27018 → container 27017 (port mặc định của MongoDB)
-      # 27017 là cổng của ứng dụng chạy, còn 27018 là cổng docker host tức là bên ngoài như máy mình truy cập vào cổng này thì mới vào được ứng dụng đang chạy trong docker
-    restart: always  # Tự động khởi động lại container nếu bị crash hoặc restart Docker
+      - "27018:27017"
+    restart: always
     networks:
-      - demoexpress_network  # Kết nối container này với mạng nội bộ tên là demoexpress_network
+      - demoexpress_network
     volumes:
-      - mongodb:/data/db  # Gắn volume tên "mongodb" vào thư mục /data/db trong container (lưu trữ dữ liệu MongoDB)
+      - mongodb:/data/db
 
-  myapp:  # Khai báo service ứng dụng Node.js
-    build: .  # Build image từ Dockerfile trong thư mục hiện tại (.)
-    container_name: demoexpress  # Đặt tên cụ thể cho container là "demoexpress"
+  myapp:
+    build: .
+    container_name: demoexpress
     ports:
-      - '${PORT}:${PORT}'  # Map cổng được cấu hình trong file .env sang container (ví dụ 8000:8000)
-    depends_on:
-      - db  # Chờ MongoDB khởi động trước khi chạy container này
-    restart: always  # Tự động khởi động lại khi gặp lỗi hoặc Docker restart
+      - '${PORT}:${PORT}'
     env_file:
-      - .env  # Load biến môi trường từ file `.env` bên ngoài
+      - .env
     environment:
-      MONGODB_URI: mongodb://db:27017/MongoDBLearning  # Thiết lập biến môi trường MONGODB_URI, kết nối tới service `db`, dùng db service làm db_host
+      - MONGODB_URI=${MONGODB_URI}  # 👈 THÊM DÒNG NÀY nếu chưa có
+    depends_on:
+      - db
+    restart: always
     networks:
-      - demoexpress_network  # Kết nối container với mạng nội bộ
+      - demoexpress_network
 
-# Khai báo các mạng nội bộ để các service có thể giao tiếp qua tên service (vd: db)
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/certs:/etc/nginx/certs
+    depends_on:
+      - myapp
+    networks:
+      - demoexpress_network
+
 networks:
   demoexpress_network:
-    driver: bridge  # Dùng driver bridge (mạng ảo nội bộ của Docker, mặc định)
+    driver: bridge
 
-# Khai báo volume để lưu trữ dữ liệu MongoDB – giữ dữ liệu khi container bị xóa hoặc restart
 volumes:
   mongodb:
-    driver: local  # Sử dụng volume nội bộ do Docker quản lý (trên máy host)
+    driver: local
