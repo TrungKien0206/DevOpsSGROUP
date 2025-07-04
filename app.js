@@ -10,7 +10,7 @@ app.use(express.json());
 connectDB();
 
 app.get('/', (req, res) => {
-  res.send('Hello bro chúc bro 1 ngày vui :)))');
+  res.send('Hello 1 ngày vui :)))');
 });
 
 const PORT = process.env.PORT || 8000;
