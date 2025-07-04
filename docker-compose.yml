@@ -1,51 +1,55 @@
-version: "3.8"
+version: "3.8"  # Phiên bản Docker Compose
 
 services:
+  # ---------------------- MongoDB Service ----------------------
   db:
-    image: mongo:7.0
-    container_name: mongodb
+    image: mongo:7.0  # Sử dụng image MongoDB version 7.0
+    container_name: mongodb  # Đặt tên container là "mongodb"
     ports:
-      - "27018:27017"
-    restart: always
+      - "27018:27017"  # Map port 27018 trên máy host với 27017 trong container
+    restart: always  # Tự restart container khi gặp lỗi hoặc máy host restart
     networks:
-      - demoexpress_network
+      - demoexpress_network  # Gắn vào mạng bridge tên "demoexpress_network"
     volumes:
-      - mongodb:/data/db
+      - mongodb:/data/db  # Gắn volume "mongodb" vào thư mục lưu dữ liệu Mongo
 
+  # ---------------------- Node.js Application Service ----------------------
   myapp:
-    build: .
-    container_name: demoexpress
+    build: .  # Build image từ Dockerfile trong thư mục hiện tại (project gốc)
+    container_name: demoexpress  # Đặt tên container là "demoexpress"
     ports:
-      - '${PORT}:${PORT}'
+      - '${PORT}:${PORT}'  # Mở port dựa theo biến PORT trong file .env (ví dụ: 8000:8000)
     env_file:
-      - .env
+      - .env  # Load các biến môi trường từ file .env
     environment:
-      - MONGODB_URI=${MONGODB_URI}  # 👈 THÊM DÒNG NÀY nếu chưa có
+      - MONGODB_URI=${MONGODB_URI}  # Truyền biến MONGODB_URI vào container từ file .env
     depends_on:
-      - db
-    restart: always
+      - db  # Đảm bảo MongoDB container chạy trước khi app khởi động
+    restart: always  # Tự động restart container khi gặp lỗi
     networks:
-      - demoexpress_network
+      - demoexpress_network  # Gắn vào cùng mạng với MongoDB và NGINX
 
-
+  # ---------------------- NGINX Reverse Proxy Service ----------------------
   nginx:
-    image: nginx:latest
-    container_name: nginx
+    image: nginx:latest  # Sử dụng image mới nhất của NGINX
+    container_name: nginx  # Đặt tên container là "nginx"
     ports:
-      - "80:80"
-      - "443:443"
+      - "80:80"  # Mở port 80 để phục vụ HTTP
+      - "443:443"  # Mở port 443 để phục vụ HTTPS
     volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
-      - ./nginx/certs:/etc/nginx/certs
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf  # Mount file cấu hình NGINX từ local vào container
+      - ./nginx/certs:/etc/nginx/certs  # Mount thư mục chứa chứng chỉ SSL
     depends_on:
-      - myapp
+      - myapp  # Đảm bảo app chạy trước khi NGINX khởi động
     networks:
-      - demoexpress_network
+      - demoexpress_network  # Cùng mạng với app để reverse proxy
 
+# ---------------------- Mạng dùng chung ----------------------
 networks:
   demoexpress_network:
-    driver: bridge
+    driver: bridge  # Sử dụng driver mặc định "bridge"
 
+# ---------------------- Volume dùng cho MongoDB ----------------------
 volumes:
   mongodb:
-    driver: local
+    driver: local  # Sử dụng volume local để lưu trữ dữ liệu MongoDB
