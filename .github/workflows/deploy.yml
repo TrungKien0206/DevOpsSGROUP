@@ -1,53 +1,51 @@
-name: CI/CD test # Tên của workflow sẽ hiển thị trong tab Actions trên GitHub
+name: CI/CD test
 
 on:
   push:
-    branches: [main] # Kích hoạt workflow khi có code được push vào nhánh main
+    branches: [main]
   pull_request:
-    branches: [main] # Kích hoạt khi có pull request mở/merge vào nhánh main
+    branches: [main]
 
 jobs:
-  build-and-deploy: # Tên của job chính
-    runs-on: ubuntu-latest # Chạy job trên máy ảo Ubuntu mới nhất
+  build-and-deploy:
+    runs-on: ubuntu-latest
 
     steps:
       - name: ⏬ Checkout code
-        uses: actions/checkout@v4 # Bước này lấy mã nguồn từ repository về runner
+        uses: actions/checkout@v4
 
       - name: ⚙️ Set up Node.js
-        uses: actions/setup-node@v4 # Dùng action để cài đặt Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: "22" # Cài Node.js phiên bản 22 (phù hợp với app)
+          node-version: "22"
 
       - name: 📦 Install dependencies
-        run: npm install # Cài đặt tất cả package từ package.json
+        run: npm install
 
       - name: 🔐 Log in to DockerHub
-        uses: docker/login-action@v3 # Dùng GitHub Action chính thức để login DockerHub
+        uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }} # Tên tài khoản DockerHub được lưu trong GitHub Secrets
-          password: ${{ secrets.DOCKERHUB_TOKEN }} # Token DockerHub (không phải password thật)
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: 🐳 Build Docker image
         run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/demoexpress:latest .
-        # Build Docker image từ Dockerfile ở thư mục gốc và gắn tag latest
 
       - name: 📤 Push Docker image
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/demoexpress:latest
-        # Đẩy image vừa build lên DockerHub
 
       - name: 🔐 Setup SSH to EC2
         run: |
-          mkdir -p ~/.ssh  # Tạo thư mục .ssh nếu chưa có
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa  # Tạo file private key từ biến secret
-          chmod 600 ~/.ssh/id_rsa  # Đặt quyền riêng tư cho file key (bắt buộc)
-          ssh-keyscan -H 47.128.251.53 >> ~/.ssh/known_hosts  # Thêm host key của EC2 vào known_hosts để tránh cảnh báo khi SSH
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 47.128.251.53 >> ~/.ssh/known_hosts
 
       - name: 🚀 Deploy on EC2
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@47.128.251.53 << 'EOF'
-            cd ~/DevOpsSGROUP  # Truy cập thư mục chứa source code trên EC2
-            git pull origin main  # Lấy code mới nhất từ GitHub repo (đã clone từ trước)
-            docker-compose down  # Tắt toàn bộ container đang chạy (nếu có)
-            docker-compose up -d --build  # Build lại và chạy các container mới ở chế độ detached
-          EOF  # Kết thúc khối lệnh SSH
+            cd ~/DevOpsSGROUP
+            git pull origin main
+            docker-compose down
+            docker-compose up -d --build
+          EOF
